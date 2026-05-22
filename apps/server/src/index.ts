@@ -1,21 +1,29 @@
+import { serve } from "@hono/node-server";
 import { env } from "@my-better-t-app/env/server";
-import { Hono } from "hono";
-import { cors } from "hono/cors";
-import { logger } from "hono/logger";
 
-const app = new Hono();
+import app from "./app";
 
-app.use(logger());
-app.use(
-  "/*",
-  cors({
-    origin: env.CORS_ORIGIN,
-    allowMethods: ["GET", "POST", "OPTIONS"],
-  }),
-);
+const port = env.PORT;
 
-app.get("/", (c) => {
-  return c.text("OK");
+const server = serve({
+  fetch: app.fetch,
+  port,
 });
 
-export default app;
+console.log(`Server is running on http://localhost:${port}`);
+
+function gracefulShutdown(signal: string) {
+  console.log(`\n${signal} received. Starting graceful shutdown...`);
+  server.close(() => {
+    console.log("HTTP server closed.");
+    process.exit(0);
+  });
+
+  setTimeout(() => {
+    console.error("Forced shutdown after timeout.");
+    process.exit(1);
+  }, 10000);
+}
+
+process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
+process.on("SIGINT", () => gracefulShutdown("SIGINT"));
