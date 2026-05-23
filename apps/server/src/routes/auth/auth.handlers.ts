@@ -48,14 +48,17 @@ export const login: AppRouteHandler<LoginRoute> = async (c) => {
     return c.json({ message: "用户名或密码错误" }, HttpStatusCodes.UNAUTHORIZED);
   }
 
-  const rolePerms = await db.query.rolePermissions.findMany({
-    where(fields, operators) {
-      return operators.eq(fields.roleId, admin.roleId!);
-    },
-    with: {
-      permission: true,
-    },
-  });
+  const roleId = admin.roleId;
+  const rolePerms = roleId
+    ? await db.query.rolePermissions.findMany({
+        where(fields, operators) {
+          return operators.eq(fields.roleId, roleId);
+        },
+        with: {
+          permission: true,
+        },
+      })
+    : [];
 
   const permCodes = rolePerms.map((rp) => rp.permission.code);
   const roleName = admin.role?.name ?? "";
@@ -92,24 +95,38 @@ export const login: AppRouteHandler<LoginRoute> = async (c) => {
 };
 
 export const logout: AppRouteHandler<LogoutRoute> = async (c) => {
-  const authHeader = c.req.header("Authorization")!;
+  const authHeader = c.req.header("Authorization");
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return c.json({ message: "未授权" }, HttpStatusCodes.UNAUTHORIZED);
+  }
   const accessToken = authHeader.slice(7);
 
-  const accessPayload = verifyToken<AccessTokenPayload>(accessToken);
+  let accessPayload: AccessTokenPayload;
+  try {
+    accessPayload = verifyToken<AccessTokenPayload>(accessToken);
+  } catch {
+    return c.json({ message: "Token 无效或已过期" }, HttpStatusCodes.UNAUTHORIZED);
+  }
+
+  if (!accessPayload.jti || !accessPayload.exp) {
+    return c.json({ message: "Token 无效" }, HttpStatusCodes.UNAUTHORIZED);
+  }
 
   await db.insert(tokenBlacklist).values({
-    tokenJti: accessPayload.jti!,
-    expiresAt: new Date(accessPayload.exp! * 1000),
+    tokenJti: accessPayload.jti,
+    expiresAt: new Date(accessPayload.exp * 1000),
   });
 
   const body = (await c.req.json().catch(() => ({}))) as { refreshToken?: string };
   if (body?.refreshToken) {
     try {
       const refreshPayload = verifyToken<RefreshTokenPayload>(body.refreshToken);
-      await db.insert(tokenBlacklist).values({
-        tokenJti: refreshPayload.jti!,
-        expiresAt: new Date(refreshPayload.exp! * 1000),
-      });
+      if (refreshPayload.jti && refreshPayload.exp) {
+        await db.insert(tokenBlacklist).values({
+          tokenJti: refreshPayload.jti,
+          expiresAt: new Date(refreshPayload.exp * 1000),
+        });
+      }
     } catch {
       // Refresh token already invalid, skip
     }
@@ -155,14 +172,17 @@ export const refresh: AppRouteHandler<RefreshRoute> = async (c) => {
     return c.json({ message: "Refresh Token 无效或已过期" }, HttpStatusCodes.UNAUTHORIZED);
   }
 
-  const rolePerms = await db.query.rolePermissions.findMany({
-    where(fields, operators) {
-      return operators.eq(fields.roleId, admin.roleId!);
-    },
-    with: {
-      permission: true,
-    },
-  });
+  const roleId = admin.roleId;
+  const rolePerms = roleId
+    ? await db.query.rolePermissions.findMany({
+        where(fields, operators) {
+          return operators.eq(fields.roleId, roleId);
+        },
+        with: {
+          permission: true,
+        },
+      })
+    : [];
 
   const permCodes = rolePerms.map((rp) => rp.permission.code);
   const roleName = admin.role?.name ?? "";
@@ -209,14 +229,17 @@ export const me: AppRouteHandler<MeRoute> = async (c) => {
     return c.json({ message: "未授权" }, HttpStatusCodes.UNAUTHORIZED);
   }
 
-  const rolePerms = await db.query.rolePermissions.findMany({
-    where(fields, operators) {
-      return operators.eq(fields.roleId, admin.roleId!);
-    },
-    with: {
-      permission: true,
-    },
-  });
+  const roleId = admin.roleId;
+  const rolePerms = roleId
+    ? await db.query.rolePermissions.findMany({
+        where(fields, operators) {
+          return operators.eq(fields.roleId, roleId);
+        },
+        with: {
+          permission: true,
+        },
+      })
+    : [];
 
   const permCodes = rolePerms.map((rp) => rp.permission.code);
 
@@ -259,14 +282,21 @@ export const changePassword: AppRouteHandler<ChangePasswordRoute> = async (c) =>
   await db.update(admins).set({ passwordHash: newHash }).where(eq(admins.id, authUser.id));
 
   // Blacklist current token to force re-login
-  const authHeader = c.req.header("Authorization")!;
-  const accessToken = authHeader.slice(7);
-  const accessPayload = verifyToken<AccessTokenPayload>(accessToken);
-
-  await db.insert(tokenBlacklist).values({
-    tokenJti: accessPayload.jti!,
-    expiresAt: new Date(accessPayload.exp! * 1000),
-  });
+  const authHeader = c.req.header("Authorization");
+  if (authHeader && authHeader.startsWith("Bearer ")) {
+    const accessToken = authHeader.slice(7);
+    try {
+      const accessPayload = verifyToken<AccessTokenPayload>(accessToken);
+      if (accessPayload.jti && accessPayload.exp) {
+        await db.insert(tokenBlacklist).values({
+          tokenJti: accessPayload.jti,
+          expiresAt: new Date(accessPayload.exp * 1000),
+        });
+      }
+    } catch {
+      // Token already invalid, skip blacklisting
+    }
+  }
 
   return c.json({ message: "密码修改成功，请重新登录" }, HttpStatusCodes.OK);
 };

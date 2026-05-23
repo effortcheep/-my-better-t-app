@@ -3,14 +3,21 @@ import { env } from "@my-better-t-app/env/server";
 
 const rateLimitStore = new Map<string, { count: number; resetTime: number }>();
 
-export function rateLimiter(): MiddlewareHandler {
-  const maxRequests = env.RATE_LIMIT_MAX;
-  const windowMs = env.RATE_LIMIT_WINDOW_MS;
+interface RateLimiterOptions {
+  maxRequests?: number;
+  windowMs?: number;
+  keyPrefix?: string;
+}
+
+export function rateLimiter(options?: RateLimiterOptions): MiddlewareHandler {
+  const maxRequests = options?.maxRequests ?? env.RATE_LIMIT_MAX;
+  const windowMs = options?.windowMs ?? env.RATE_LIMIT_WINDOW_MS;
+  const keyPrefix = options?.keyPrefix ?? "rate_limit";
 
   return async (c, next) => {
     const ip = c.req.header("x-forwarded-for") || c.req.header("x-real-ip") || "unknown";
     const now = Date.now();
-    const key = `rate_limit:${ip}`;
+    const key = `${keyPrefix}:${ip}`;
 
     const record = rateLimitStore.get(key);
 
