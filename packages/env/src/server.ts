@@ -16,7 +16,7 @@ export const env = createEnv({
     JWT_SECRET: z.string().min(32),
     JWT_ACCESS_EXPIRES_IN: z.string().default("15m"),
     JWT_REFRESH_EXPIRES_IN: z.string().default("7d"),
-    BCRYPT_COST_FACTOR: z.coerce.number().default(10),
+    BCRYPT_COST_FACTOR: z.coerce.number().default(12),
     DEFAULT_ADMIN_USERNAME: z.string().default("admin"),
     DEFAULT_ADMIN_PASSWORD: z.string().min(1),
   },
