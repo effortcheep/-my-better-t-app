@@ -21,8 +21,11 @@
   },
   "devDependencies": {
     "@my-better-t-app/config": "workspace:*",
+    "@solidjs/testing-library": "^0.8.10",
+    "jsdom": "^26.1.0",
     "typescript": "catalog:",
     "vite": "^8.0.8",
-    "vite-plugin-solid": "^2.11.12"
+    "vite-plugin-solid": "^2.11.12",
+    "vitest": "^4.1.7"
   }
 }

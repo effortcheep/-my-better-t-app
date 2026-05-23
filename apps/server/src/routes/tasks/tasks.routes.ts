@@ -13,10 +13,7 @@ export const list = createRoute({
   method: "get",
   tags,
   responses: {
-    [HttpStatusCodes.OK]: jsonContent(
-      z.array(selectTasksSchema),
-      "The list of tasks",
-    ),
+    [HttpStatusCodes.OK]: jsonContent(z.array(selectTasksSchema), "The list of tasks"),
   },
 });
 
@@ -24,17 +21,11 @@ export const create = createRoute({
   path: "/tasks",
   method: "post",
   request: {
-    body: jsonContentRequired(
-      insertTasksSchema,
-      "The task to create",
-    ),
+    body: jsonContentRequired(insertTasksSchema, "The task to create"),
   },
   tags,
   responses: {
-    [HttpStatusCodes.OK]: jsonContent(
-      selectTasksSchema,
-      "The created task",
-    ),
+    [HttpStatusCodes.OK]: jsonContent(selectTasksSchema, "The created task"),
     [HttpStatusCodes.UNPROCESSABLE_ENTITY]: jsonContent(
       createErrorSchema(insertTasksSchema),
       "The validation error(s)",
@@ -50,14 +41,8 @@ export const getOne = createRoute({
   },
   tags,
   responses: {
-    [HttpStatusCodes.OK]: jsonContent(
-      selectTasksSchema,
-      "The requested task",
-    ),
-    [HttpStatusCodes.NOT_FOUND]: jsonContent(
-      notFoundSchema,
-      "Task not found",
-    ),
+    [HttpStatusCodes.OK]: jsonContent(selectTasksSchema, "The requested task"),
+    [HttpStatusCodes.NOT_FOUND]: jsonContent(notFoundSchema, "Task not found"),
     [HttpStatusCodes.UNPROCESSABLE_ENTITY]: jsonContent(
       createErrorSchema(IdParamsSchema),
       "Invalid id error",
@@ -70,24 +55,14 @@ export const patch = createRoute({
   method: "patch",
   request: {
     params: IdParamsSchema,
-    body: jsonContentRequired(
-      patchTasksSchema,
-      "The task updates",
-    ),
+    body: jsonContentRequired(patchTasksSchema, "The task updates"),
   },
   tags,
   responses: {
-    [HttpStatusCodes.OK]: jsonContent(
-      selectTasksSchema,
-      "The updated task",
-    ),
-    [HttpStatusCodes.NOT_FOUND]: jsonContent(
-      notFoundSchema,
-      "Task not found",
-    ),
+    [HttpStatusCodes.OK]: jsonContent(selectTasksSchema, "The updated task"),
+    [HttpStatusCodes.NOT_FOUND]: jsonContent(notFoundSchema, "Task not found"),
     [HttpStatusCodes.UNPROCESSABLE_ENTITY]: jsonContent(
-      createErrorSchema(patchTasksSchema)
-        .or(createErrorSchema(IdParamsSchema)),
+      createErrorSchema(patchTasksSchema).or(createErrorSchema(IdParamsSchema)),
       "The validation error(s)",
     ),
   },
@@ -104,10 +79,7 @@ export const remove = createRoute({
     [HttpStatusCodes.NO_CONTENT]: {
       description: "Task deleted",
     },
-    [HttpStatusCodes.NOT_FOUND]: jsonContent(
-      notFoundSchema,
-      "Task not found",
-    ),
+    [HttpStatusCodes.NOT_FOUND]: jsonContent(notFoundSchema, "Task not found"),
     [HttpStatusCodes.UNPROCESSABLE_ENTITY]: jsonContent(
       createErrorSchema(IdParamsSchema),
       "Invalid id error",

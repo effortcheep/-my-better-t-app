@@ -6,7 +6,10 @@ export const tasks = pgTable("tasks", {
   name: text().notNull(),
   done: boolean().notNull().default(false),
   createdAt: timestamp("created_at").notNull().defaultNow(),
-  updatedAt: timestamp("updated_at").notNull().defaultNow().$onUpdate(() => new Date()),
+  updatedAt: timestamp("updated_at")
+    .notNull()
+    .defaultNow()
+    .$onUpdate(() => new Date()),
 });
 
 export const selectTasksSchema = createSelectSchema(tasks);

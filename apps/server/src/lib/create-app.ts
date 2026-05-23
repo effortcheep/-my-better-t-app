@@ -23,7 +23,8 @@ export function createRouter() {
 export default function createApp() {
   const app = createRouter();
 
-  app.use(requestId())
+  app
+    .use(requestId())
     .use(serveEmojiFavicon("📝"))
     .use(pinoLogger())
     .use(secureHeaders())

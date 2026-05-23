@@ -64,10 +64,7 @@ export const patch: AppRouteHandler<PatchRoute> = async (c) => {
     );
   }
 
-  const [task] = await db.update(tasks)
-    .set(updates)
-    .where(eq(tasks.id, id))
-    .returning();
+  const [task] = await db.update(tasks).set(updates).where(eq(tasks.id, id)).returning();
 
   if (!task) {
     return c.json(
@@ -83,8 +80,7 @@ export const patch: AppRouteHandler<PatchRoute> = async (c) => {
 
 export const remove: AppRouteHandler<RemoveRoute> = async (c) => {
   const { id } = c.req.valid("param");
-  const result = await db.delete(tasks)
-    .where(eq(tasks.id, id));
+  const result = await db.delete(tasks).where(eq(tasks.id, id));
 
   if (result.rowCount === 0) {
     return c.json(
