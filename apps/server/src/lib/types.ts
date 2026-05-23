@@ -10,10 +10,16 @@ export interface AuthUser {
   permissions: string[];
 }
 
+export interface UserAuthUser {
+  id: number;
+  email: string;
+}
+
 export interface AppBindings {
   Variables: {
     logger: PinoLogger;
     user: AuthUser;
+    userAuthUser: UserAuthUser;
   };
 }
 

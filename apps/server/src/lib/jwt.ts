@@ -20,11 +20,30 @@ export interface RefreshTokenPayload {
   jti?: string;
 }
 
+function parseExpiresIn(value: string): number {
+  const match = value.match(/^(\d+)([mhd])$/);
+  if (!match) {
+    throw new Error(`Invalid expires format: ${value}`);
+  }
+  const num = parseInt(match[1], 10);
+  const unit = match[2];
+  switch (unit) {
+    case "m":
+      return num * 60;
+    case "h":
+      return num * 3600;
+    case "d":
+      return num * 86400;
+    default:
+      throw new Error(`Unknown time unit: ${unit}`);
+  }
+}
+
 export function generateAccessToken(payload: Omit<AccessTokenPayload, "jti" | "iat" | "exp">) {
   const jti = randomUUID();
   return {
     token: jwt.sign({ ...payload, jti }, env.JWT_SECRET, {
-      expiresIn: Number(env.JWT_ACCESS_EXPIRES_IN.replace("h", "")) * 3600,
+      expiresIn: parseExpiresIn(env.JWT_ACCESS_EXPIRES_IN),
     }),
     jti,
   };
@@ -34,7 +53,7 @@ export function generateRefreshToken(payload: Omit<RefreshTokenPayload, "jti" | 
   const jti = randomUUID();
   return {
     token: jwt.sign({ ...payload, jti }, env.JWT_SECRET, {
-      expiresIn: Number(env.JWT_REFRESH_EXPIRES_IN.replace("d", "")) * 86400,
+      expiresIn: parseExpiresIn(env.JWT_REFRESH_EXPIRES_IN),
     }),
     jti,
   };
